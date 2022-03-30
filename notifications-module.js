@@ -1,4 +1,6 @@
 const axios = require("axios");
+const log = require('./log');
+var conn = require('./mysql-module');
 
 //Variables para almacenar los ultimos valores leídos, y banderas para notificar solo una vez On/Off
 var cfeVoltL1 = null;
@@ -146,19 +148,36 @@ function validate(data) {
     cargaVoltL1 = data[38];
     cargaVoltL2 = data[44];
     cargaVoltL3 = data[50];
-    console.log(notify);
-    if (notify.length > 0) {
-        for (let i = 0; i < notify.length; i++) {
+    return notify;
+    // if (notify.length > 0) {
+    //     for (let i = 0; i < notify.length; i++) {
+    //         let alertID;
+    //         alertRegister(notify[i]).then((result) => {
+    //             console.log("Registro almacenado en Alerta ID: " + result.insertId);
+    //             alertID = result.insertId;
+    //         }).then(() => {
+    //             alertNotification(alertID).then(resp => {
+    //                 console.log(resp);
+    //             });
+    //         });
+    //     }
+    // }
+}
+
+async function generate(alertas) {
+    if (alertas.length > 0) {
+        for (let i = 0; i < alertas.length; i++) {
             let alertID;
-            alertRegister(notify[i]).then((result) => {
+            await register(alertas[i]).then((result) => {
                 console.log("Registro almacenado en Alerta ID: " + result.insertId);
                 alertID = result.insertId;
-            }).then(() => {
-                alertNotification(alertID).then(resp => {
-                    console.log(resp);
-                });
+            });
+            await sendToAPI(alertID).then(resp => {
+                console.log(resp);
             });
         }
+    } else {
+        console.log("sin alerta para agregar");
     }
 }
 
@@ -198,6 +217,5 @@ function register(alerta) {
 
 module.exports = {
     'validate': validate,
-    'sendToAPI': sendToAPI,
-    'register': register
+    'generate': generate
 }
